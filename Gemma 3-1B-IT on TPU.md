@@ -236,7 +236,7 @@ These hypotheses are written in advance precisely so the empirical run, when it 
 
 ```bash
 # In a fresh environment
-git clone https://github.com/andyrdt/refusal_direction.git
+git clone https://github.com/Ruqyai/refusal_direction.git
 cd refusal_direction
 pip install -r requirements.txt
 pip install -U "transformers>=4.50"           # required for Gemma 3
