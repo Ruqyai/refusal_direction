@@ -278,7 +278,7 @@ The threat model this work informs is *not* "an attacker gains capabilities they
 
 **Google Cloud credits are provided for this project.**
 
-#AISprint 
+#TPUSprin
 
 ---
 
