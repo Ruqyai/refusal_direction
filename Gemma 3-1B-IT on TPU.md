@@ -273,6 +273,12 @@ On a TPU v3-8 with `bfloat16`, the full pipeline is expected to complete in well
 This work removes safety guardrails from a publicly released model, in the same way and for the same reasons as the original paper: to understand, and ultimately to harden, those guardrails. Removing the refusal direction produces a model that should not be deployed, distributed, or used to assist in actual harmful tasks. The artifacts produced by this pipeline (the direction tensor, the modified-completion JSONs) should be treated as research-only.
 
 The threat model this work informs is *not* "an attacker gains capabilities they did not have" — open-weight models can already be fine-tuned to remove safety, and that has been public knowledge for over a year. The threat model is "current safety training is shallow in a specific, characterizable way." Characterizing the shallowness is the first step to designing training recipes that are not shallow in that way.
+---
+### Thanks to Google Cloud
+
+**Google Cloud credits are provided for this project.**
+
+#AISprint 
 
 ---
 
@@ -282,4 +288,4 @@ The threat model this work informs is *not* "an attacker gains capabilities they
 2. Original implementation — [github.com/andyrdt/refusal_direction](https://github.com/andyrdt/refusal_direction).
 3. Gemma Team, Google DeepMind (2025). *Gemma 3 model card.* [huggingface.co/google/gemma-3-1b-it](https://huggingface.co/google/gemma-3-1b-it).
 4. PyTorch/XLA documentation — [pytorch.org/xla](https://pytorch.org/xla).
-5. Companion blog post for this extension — [blog.md](blog.md).
+
