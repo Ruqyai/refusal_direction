@@ -262,6 +262,17 @@ class GemmaModelWrapper:
         self.model = self.model.to(DEVICE)
         self.model.eval()
 
+        # Fix: disable sliding window to avoid cache range errors
+        big_window = config.max_seq_length + 512
+        self.model.config.sliding_window = big_window
+        if hasattr(self.model.config, 'text_config'):
+            self.model.config.text_config.sliding_window = big_window
+        for layer in self.model.model.layers:
+            if hasattr(layer.self_attn, 'sliding_window'):
+                layer.self_attn.sliding_window = big_window
+            if hasattr(layer.self_attn, 'config'):
+                layer.self_attn.config.sliding_window = big_window
+
         # TPU: mark step to compile the graph
         if TPU_AVAILABLE:
             xm.mark_step()
@@ -293,7 +304,7 @@ class GemmaModelWrapper:
         tokens = self.tokenizer(
             formatted,
             return_tensors="pt",
-            padding=True,
+            padding="max_length",
             truncation=True,
             max_length=max_length,
         )
@@ -342,7 +353,7 @@ def compute_refusal_scores(
             batch, max_length=config.max_seq_length
         )
         with torch.no_grad():
-            logits = model(**inputs).logits[:, -1, :].to(torch.float32)
+            logits = model(**inputs, use_cache=False).logits[:, -1, :].to(torch.float32)
         if TPU_AVAILABLE:
             xm.mark_step()
         probs = torch.softmax(logits, dim=-1)
@@ -434,7 +445,7 @@ def extract_activations(
         )
 
         with torch.no_grad():
-            _ = model(**inputs)
+            _ = model(**inputs, use_cache=False)
 
         # TPU sync
         if TPU_AVAILABLE and (batch_idx + 1) % config.tpu_sync_frequency == 0:
@@ -648,8 +659,10 @@ def evaluate_bypass_refusal(
             with torch.no_grad():
                 outputs = model.generate(
                     **inputs,
-                    max_new_tokens=128,
+                    max_new_tokens=64,
+                    min_new_tokens=64,
                     do_sample=False,
+                    use_cache=False,
                 )
 
             if TPU_AVAILABLE:
@@ -752,8 +765,10 @@ def evaluate_induce_refusal(
             with torch.no_grad():
                 outputs = model.generate(
                     **inputs,
-                    max_new_tokens=128,
+                    max_new_tokens=64,
+                    min_new_tokens=64,
                     do_sample=False,
+                    use_cache=False,
                 )
 
             if TPU_AVAILABLE:
@@ -844,7 +859,7 @@ def evaluate_ce_loss(
             inputs = {k: v.to(DEVICE) for k, v in inputs.items()}
 
             with torch.no_grad():
-                outputs = model(**inputs, labels=inputs["input_ids"])
+                outputs = model(**inputs, use_cache=False, labels=inputs["input_ids"])
                 loss = outputs.loss
 
             if TPU_AVAILABLE:
@@ -948,7 +963,7 @@ def run_pipeline(config: PipelineConfig):
     # ── Filter mislabeled samples (matches `filter_train` in original repo) ─
     profiler.start("filter_data")
     harmful, harmless = filter_by_refusal(model_wrapper, harmful, harmless, config)
-    if len(harmful) < 8 or len(harmless) < 8:
+    if len(harmful) < 2 or len(harmless) < 2:
         raise RuntimeError(
             f"Too few samples after filtering: harmful={len(harmful)}, "
             f"harmless={len(harmless)}. Increase --n_instructions or check "

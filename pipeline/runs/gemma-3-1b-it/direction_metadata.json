@@ -1,0 +1,8 @@
+{
+  "model_path": "google/gemma-3-1b-it",
+  "best_layer": 22,
+  "d_model": 1152,
+  "n_layers": 26,
+  "n_instructions": 6,
+  "device": "TPU"
+}
